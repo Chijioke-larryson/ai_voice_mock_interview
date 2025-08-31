@@ -2,11 +2,13 @@
 import { exec } from "child_process";
 import { promisify } from "util";
 import fs from "fs";
+import chokidar from "chokidar";
 
 const run = promisify(exec);
 const QUEUE_FILE = "commit-queue.json";
+const REPO_PATH = process.cwd();
 
-// Load queued commits if any
+// --- Queue Helpers ---
 function loadQueue() {
     if (!fs.existsSync(QUEUE_FILE)) return [];
     try {
@@ -15,25 +17,23 @@ function loadQueue() {
         return [];
     }
 }
-
-// Save queue to file
 function saveQueue(queue) {
     fs.writeFileSync(QUEUE_FILE, JSON.stringify(queue, null, 2));
 }
 
-// Run git command helper
+// --- Git Helper ---
 async function git(cmd) {
     try {
         const { stdout, stderr } = await run(`git ${cmd}`);
         if (stdout) console.log(stdout.trim());
         if (stderr) console.error(stderr.trim());
     } catch (err) {
-        console.error(`Git command failed: git ${cmd}\n${err.stderr}`);
+        console.error(`Git failed: git ${cmd}\n${err.stderr}`);
         throw err;
     }
 }
 
-// Create a commit
+// --- Commit Creator ---
 async function makeCommit() {
     const message = `Auto-commit at ${new Date().toISOString()}`;
     await git("add .");
@@ -41,24 +41,22 @@ async function makeCommit() {
     return message;
 }
 
-// Try to push commits
+// --- Pusher ---
 async function pushCommits(queue) {
     if (queue.length === 0) return;
-
-    console.log("🔄 Attempting to push queued commits...");
+    console.log("🔄 Trying to push queued commits...");
     try {
-        await git("push origin main"); // change branch if not "main"
+        await git("push origin main"); // change 'main' if using another branch
         console.log("✅ Push successful!");
-        queue.length = 0; // clear queue on success
+        queue.length = 0;
     } catch {
         console.log("⚠️ Push failed, keeping commits in queue.");
     }
 }
 
-// Main function
-async function main() {
+// --- Main Logic ---
+async function commitAndPush() {
     let queue = loadQueue();
-
     try {
         const message = await makeCommit();
         queue.push(message);
@@ -66,9 +64,14 @@ async function main() {
     } catch (e) {
         console.error("Skipping commit due to error:", e.message);
     }
-
     await pushCommits(queue);
     saveQueue(queue);
 }
 
-main();
+// --- Watch for file changes ---
+chokidar.watch(REPO_PATH, { ignored: /node_modules|\.git/ }).on("all", async (event, path) => {
+    console.log(`📂 Change detected: ${event} on ${path}`);
+    await commitAndPush();
+});
+
+console.log("👀 Watching project for changes... Auto-commit is active.");
