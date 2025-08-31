@@ -20,7 +20,7 @@ const formSchema = z.object({
     username: z.string().min(2).max(50),
 })
 
-const AuthForm = () => {
+const AuthForm = ({type}:{form: FormType}) => {
     // 1. Define your form.
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -35,6 +35,8 @@ const AuthForm = () => {
         // ✅ This will be type-safe and validated.
         console.log(values)
     }
+
+    const isSignIn = type ==
     return (
         <div className="card-border lg:min-w-[566px]">
             <div className="flex flex-col gap-6 card py-14 px-10">
