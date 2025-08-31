@@ -1,20 +1,19 @@
-import simpleGit from "simple-git";
-import chokidar from "chokidar";
-import isOnline from "is-online";
+// auto-commit.mjs
+import { exec } from "child_process";
+import { promisify } from "util";
 import fs from "fs";
 
-const git = simpleGit();
-const REPO_PATH = process.cwd();
-const QUEUE_FILE = `${REPO_PATH}/.commit_queue.json`;
+const run = promisify(exec);
+const QUEUE_FILE = "commit-queue.json";
 
-let lastCommit = Date.now();
-
-// Load commit queue if exists
+// Load queued commits if any
 function loadQueue() {
-    if (fs.existsSync(QUEUE_FILE)) {
-        return JSON.parse(fs.readFileSync(QUEUE_FILE, "utf-8"));
+    if (!fs.existsSync(QUEUE_FILE)) return [];
+    try {
+        return JSON.parse(fs.readFileSync(QUEUE_FILE, "utf8"));
+    } catch {
+        return [];
     }
-    return [];
 }
 
 // Save queue to file
@@ -22,63 +21,54 @@ function saveQueue(queue) {
     fs.writeFileSync(QUEUE_FILE, JSON.stringify(queue, null, 2));
 }
 
-async function autoCommit(message) {
-    const online = await isOnline();
-    let queue = loadQueue();
-
-    if (!online) {
-        console.log("⚠️ No internet. Saving commit to queue...");
-        queue.push({ message, timestamp: Date.now() });
-        saveQueue(queue);
-        return;
-    }
-
-    // First push any queued commits
-    if (queue.length > 0) {
-        console.log(`📦 Found ${queue.length} queued commits. Pushing...`);
-        for (const commit of queue) {
-            try {
-                fs.appendFileSync("queued_changes.log", `Replay at ${new Date().toISOString()}\n`);
-                await git.add(".");
-                await git.commit(commit.message);
-                await git.push();
-                console.log(`[+] Queued commit pushed: ${commit.message}`);
-            } catch (err) {
-                console.log("[-] Failed to push queued commit, keeping it in queue:", err.message);
-                saveQueue(queue);
-                return;
-            }
-        }
-        // Clear queue if successful
-        queue = [];
-        saveQueue(queue);
-    }
-
-    // Now push the new commit
+// Run git command helper
+async function git(cmd) {
     try {
-        await git.add(".");
-        await git.commit(message);
-        await git.push();
-        console.log(`[+] Auto commit pushed: ${message}`);
-        lastCommit = Date.now();
+        const { stdout, stderr } = await run(`git ${cmd}`);
+        if (stdout) console.log(stdout.trim());
+        if (stderr) console.error(stderr.trim());
     } catch (err) {
-        console.log("[-] Push failed, saving commit to queue:", err.message);
-        queue.push({ message, timestamp: Date.now() });
-        saveQueue(queue);
+        console.error(`Git command failed: git ${cmd}\n${err.stderr}`);
+        throw err;
     }
 }
 
-// Watch for file changes
-chokidar.watch(REPO_PATH, { ignored: /node_modules/ }).on("all", async () => {
-    await autoCommit("Auto commit: File change detected");
-});
+// Create a commit
+async function makeCommit() {
+    const message = `Auto-commit at ${new Date().toISOString()}`;
+    await git("add .");
+    await git(`commit -m "${message}" || echo 'No changes to commit'`);
+    return message;
+}
 
-// Scheduled commit every 40 minutes
-setInterval(async () => {
-    await autoCommit("Scheduled auto commit (40 min)");
-}, 40 * 60 * 1000);
+// Try to push commits
+async function pushCommits(queue) {
+    if (queue.length === 0) return;
 
-// Retry every 2 minutes if internet comes back
-setInterval(async () => {
-    await autoCommit("Retry pending commits");
-}, 2 * 60 * 1000);
+    console.log("🔄 Attempting to push queued commits...");
+    try {
+        await git("push origin main"); // change branch if not "main"
+        console.log("✅ Push successful!");
+        queue.length = 0; // clear queue on success
+    } catch {
+        console.log("⚠️ Push failed, keeping commits in queue.");
+    }
+}
+
+// Main function
+async function main() {
+    let queue = loadQueue();
+
+    try {
+        const message = await makeCommit();
+        queue.push(message);
+        saveQueue(queue);
+    } catch (e) {
+        console.error("Skipping commit due to error:", e.message);
+    }
+
+    await pushCommits(queue);
+    saveQueue(queue);
+}
+
+main();
