@@ -28,6 +28,11 @@ async function git(cmd) {
         if (stdout) console.log(stdout.trim());
         if (stderr) console.error(stderr.trim());
     } catch (err) {
+        // auto-clean index.lock if it blocks commits
+        if (fs.existsSync(".git/index.lock")) {
+            fs.unlinkSync(".git/index.lock");
+            console.log("⚠️ Removed stale index.lock");
+        }
         console.error(`Git failed: git ${cmd}\n${err.stderr}`);
         throw err;
     }
@@ -46,7 +51,7 @@ async function pushCommits(queue) {
     if (queue.length === 0) return;
     console.log("🔄 Trying to push queued commits...");
     try {
-        await git("push origin main"); // change 'main' if using another branch
+        await git("push origin main"); // change 'main' if your branch differs
         console.log("✅ Push successful!");
         queue.length = 0;
     } catch {
@@ -74,4 +79,10 @@ chokidar.watch(REPO_PATH, { ignored: /node_modules|\.git/ }).on("all", async (ev
     await commitAndPush();
 });
 
-console.log("👀 Watching project for changes... Auto-commit is active.");
+// --- Scheduled commits every 10 minutes ---
+setInterval(async () => {
+    console.log("⏰ Running scheduled auto-commit (10 min)...");
+    await commitAndPush();
+}, 10 * 60 * 1000);
+
+console.log("👀 Watching project for changes + auto-committing every 10 minutes...");
