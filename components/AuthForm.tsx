@@ -35,8 +35,8 @@ const AuthForm = ({type}:{form: FormType}) => {
         // ✅ This will be type-safe and validated.
         console.log(values)
     }
+    const isSignIn = type === 'sign-in';
 
-    const isSignIn = type ==
     return (
         <div className="card-border lg:min-w-[566px]">
             <div className="flex flex-col gap-6 card py-14 px-10">
@@ -48,8 +48,10 @@ const AuthForm = ({type}:{form: FormType}) => {
 
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6 mt-4 form">
-                     <p>Name</p>
-                    <Button type="submit">Submit</Button>
+                      {! isSignIn && <p>Name</p>}
+                      <p>Email</p>
+                      <p>Password</p>
+                    <Button className="btn" type="submit">Submit{isSignIn ? 'Sign in' : 'Create anacccount'}</Button>
                 </form>
             </Form>
 
