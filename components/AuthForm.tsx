@@ -23,6 +23,7 @@ const formSchema = z.object({
 
 
 import React from 'react'
+import Image from "next/image";
 
 const AuthForm = () => {
     // 1. Define your form.
@@ -40,31 +41,35 @@ const AuthForm = () => {
         console.log(values)
     }
     return (
-        <div>
+        <div className="card-border lg:main-w-[566px]">
+            <div className="fles flex-col gap-6 card py-14 px-10">
+                <div className="flex flex-row gap-2 justify-center">
+                    <Image
+                        src="/logo.svg"
+                        alt="logo"
+                        height={32}
+                        width={39} />
 
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                    <FormField
-                        control={form.control}
-                        name="username"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Username</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="shadcn" {...field} />
-                                </FormControl>
-                                <FormDescription>
-                                    This is your public display name.
-                                </FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
+                    <h2 className="text-primary-100">LarrysonTutor</h2>
+
+                </div>
+                <h3> Practice job interview with AI </h3>
+
+
+               <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="w- full space-y-6 mt-4 form">
+
+                    <p>Name</p>
+
+
                     <Button type="submit">Submit</Button>
                 </form>
             </Form>
             )
         </div>
+</div>
     )
+
+
 }
 export default AuthForm
