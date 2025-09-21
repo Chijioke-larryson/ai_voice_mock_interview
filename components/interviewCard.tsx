@@ -2,6 +2,8 @@ import React from 'react'
 import dayjs from "dayjs";
 import Image from "next/image";
 import {getRandomInterviewCover} from  "@/lib/utils"
+import {Button} from "@/components/ui/button";
+import Link from "next/link";
 
 const InterviewCard = ({ interviewId, userId, role, type, techstack, createdAt}: InterviewCardProps) => {
     const feedback = null as Feedback | null;
@@ -36,6 +38,27 @@ const InterviewCard = ({ interviewId, userId, role, type, techstack, createdAt}:
                         </div>
 
                     </div>
+
+                    <p className="line-clamp-2 mt-5">
+                        {feedback ?.finalAssessment || "You haven't taken the interview yet. Take it now to improve your skills."}
+
+                    </p>
+
+                </div>
+
+                <div className="flex flex-row justify-between">
+                    <p> Tech Icons</p>
+
+                    <Button className="btn-primary">
+                        <Link href={feedback
+                            ? `/interview/${interviewId}/feedback`
+                            : `/interview/${interviewId}`
+
+                        }>
+                            {feedback ? 'Check Feedback' : 'View Interview'}
+                        </Link>
+
+                    </Button>
 
                 </div>
 
