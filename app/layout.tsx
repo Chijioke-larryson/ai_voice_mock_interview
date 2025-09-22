@@ -12,7 +12,7 @@ const monaSans = Mona_Sans({
 
 
 export const metadata: { title: string; description: string } = {
-  title: "InterviewPrep",
+  title: "LarrysonTutor",
   description: "An Ai-powered platform for preparing for mock Interviews",
 };
 
