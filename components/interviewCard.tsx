@@ -5,8 +5,9 @@ import {getRandomInterviewCover} from  "@/lib/utils"
 import {Button} from "@/components/ui/button";
 import Link from "next/link";
 import DisplayTechIcons from "@/components/DisplayTechIcons";
+import {Feedback} from "@/types";
 
-const InterviewCard = ({interviewId, userId, role, type, techstack, createdAt, key}: InterviewCardProps) => {
+const InterviewCard = ({ interviewId, userId, role, type, techstack, createdAt}: InterviewCardProps) => {
     const feedback = null as Feedback | null;
     const normalizedType = /mix/gi.test(type) ? 'Mixed' : type;
     const formattedDate = dayjs(feedback ?.createdAt || createdAt || Date.now()).format('MMM D, YYY');
@@ -26,7 +27,7 @@ const InterviewCard = ({interviewId, userId, role, type, techstack, createdAt, k
                         {role} Interview
 
                     </h3>
-                    <div className="flex flex-col gap-5 mt-3">
+                    <div className="flex flex-row gap-5 mt-3">
                         <div className="flex flex-row gap-2">
                             <Image src="/calendar.svg" alt="calendar" width={22} height={22} />
                             <p>
