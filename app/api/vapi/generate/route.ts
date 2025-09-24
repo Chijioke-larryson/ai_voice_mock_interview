@@ -15,29 +15,26 @@ export async function GET() {
 }
 
 export async function POST(request: Request){
-    const {type, role, level, techstack, amount, userid, questions } = await  request.json();
+    const {type, role, level, techstack, amount, userid } = await  request.json();
 
     try {
-        const { text } = await generateText({
-            messages: undefined,
-            model: google('gemini-2.0-flash-001'),
-            prompt: 'Prepare questions for a job interview.' +
-                `The job is ${role}.
-                 The job experience level is ${level}.
-                 The tech stack used in the job is ${techstack}.
-                 The focus between behavioral and technical questions should be lean toward:${type}
-                 The amount of questions required is ${amount}.
-                 Please return only questions , without any additional text.
-                 The questions are going to read by a voice assistance so do not use "/" or "8" or an
-                 Return the question like this:
-                   ["Question 1", "Question 2", "Question 3"]
-                    Thank you! <3
-    \`;`
-
-
-
-
+        const {text: questions} = await generateText({
+            model: google("gemini-2.0-flash-001"),
+            prompt: `
+        Prepare questions for a job interview.
+        The job is ${role}.
+        The job experience level is ${level}.
+        The tech stack used in the job is ${techstack}.
+        The focus between behavioral and technical questions should lean toward: ${type}.
+        The amount of questions required is ${amount}.
+        Please return only questions, without any additional text.
+        The questions are going to be read by a voice assistant so do not use "/" or "8".
+        Return the questions like this:
+        ["Question 1", "Question 2", "Question 3"]
+      `,
         });
+
+
         const interview ={
             role, type, level,
             techstack: techstack.split(' , '),
