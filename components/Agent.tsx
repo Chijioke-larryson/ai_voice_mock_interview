@@ -65,8 +65,26 @@ const Agent = ({userName, userId, type}: AgentProps) => {
         if(callStatus === CallStatus.FINISHED) router.push('/');
     }, [messages,callStatus,type,userId]);
 
+    const handleCall = async () => {
+        setCallStatus(callStatus.CONNECTING);
 
-    const lastMessage = messages[messages.length -1];
+        await  vapi.start(process.env.NEXT_PUBLIC_WORKFLOW_ID!,{
+            variableValues: {
+                username: userName,
+                userid: userId,
+            }
+
+        })
+    }
+
+    const handleDisconnect = async =>{
+        setCallStatus(callStatus.FINISHED);
+        vapi.stop();
+    }
+
+
+    const lastMessage = messages[messages.length -1]?.content;
+    const isCallInactiveOrFinished = callStatus === CallStatus.INACTIVE  || callStatus === CallStatus.FINISHED;
     return (
         <>
             <div className="call-view">
@@ -95,8 +113,8 @@ const Agent = ({userName, userId, type}: AgentProps) => {
             {messages.length > 0 && (
                 <div className="transcript-border">
                     <div className="transcript">
-                        <p key={lastMessage} className={cn('transition-opacity duration-500 opacity-0', 'animate-fadeIn opacity-100')}>
-                            {lastMessage}
+                        <p key={latestMessage} className={cn('transition-opacity duration-500 opacity-0', 'animate-fadeIn opacity-100')}>
+                            {lastestMessage}
 
                         </p>
 
@@ -108,16 +126,17 @@ const Agent = ({userName, userId, type}: AgentProps) => {
 
                 <div className="w-full flex justify-center">
                     { callStatus !== 'ACTIVE' ? (
-                        <button className="relative btn-call">
-                            <span className={cn('absolute animate-ping rounded-full opacity-75', callStatus !== 'CONNECTING' & 'hidden')}
+                        <button className="relative btn-call" onClick={handleCall}>
+                            <span className={cn('absolute animate-ping rounded-full opacity-75', callStatus !== 'CONNECTING' && 'hidden')}
                                  />
 
                            <span>
-                                {callStatus === 'INACTIVE' || callStatus === 'FINISHED' ?'Call' : '. . .'}
+                                {isCallInactiveOrFinished ?'Call' : '. . .'}
                            </span>
                         </button>
                     ):(
-                        <button className="btn-disconnect">
+
+                        <button className="btn-disconnect" onClick={handleDisconnect}>
                             End
 
                         </button>
