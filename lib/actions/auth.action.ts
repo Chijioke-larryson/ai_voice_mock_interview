@@ -3,6 +3,7 @@
 import {auth, db} from "@/firebase/admin";
 import {cookies} from "next/headers";
 import {User} from "lucide-react";
+import {GetLatestInterviewsParams, Interview} from "@/types";
 
 
 const  ONE_WEEK = 60 * 60 * 24 * 7 * 1000;
@@ -111,3 +112,33 @@ export  async function isAuthenticated() {
 
     return !! user;
 }
+
+export async function  getInterviewsByUserId(userId: string): Promise<Interview[]  | null > {
+    const interviews = await db
+        .collection('interviews')
+        .where('userId', '==', userId)
+        .orderBy('createdAt', 'desc')
+        .get();
+    return interviews.docs.map((doc) => ({
+        id:  doc.id,
+        ...doc.data()
+
+    })) as interview[];
+}
+
+export async function  getLatestInterviews(params: GetLatestInterviewsParams): Promise<Interview[]  | null > {
+     const {userId, limit = 20 } = params;
+    const interviews = await db
+        .collection('interviews')
+        .orderBy('createdAt', 'desc')
+        .where('finalised', '==', false)
+        .where('userId', '!=', userId)
+        .limit(limit)
+        .get();
+    return interviews.docs.map((doc) => ({
+        id:  doc.id,
+        ...doc.data()
+
+    })) as interview[];
+}
+
